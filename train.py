@@ -13,12 +13,16 @@ from models import MLP
 import argparse
 import pdb
 import random
+torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = False
 
 seed = 42
 torch.manual_seed(seed)
 np.random.seed(seed)
 random.seed(seed)
 
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+print(device)
 
 def train(max_epoch=50):
     #### Training and validation loop!
@@ -31,6 +35,7 @@ def train(max_epoch=50):
 
         epLoss = 0
         for x, y in train_loader:       ### Fetch a batch of training inputs
+            x, y = x.to(device), y.to(device)
             yHat = model(x)               ####### Obtain a prediction from the network
             loss = (criterion(yHat,y))    ######### Compute loss bw prediction and ground truth
 
@@ -48,6 +53,7 @@ def train(max_epoch=50):
 
         epLoss = 0
         for x, y in valid_loader: #### Fetch validation samples
+            x, y = x.to(device), y.to(device)
 
             yHat = model(x) ##########
             loss = (criterion(yHat,y))#######
@@ -66,11 +72,10 @@ def train(max_epoch=50):
     return model
 
 ### Main starts here
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--data', type=str, help='Spike data',\
-        default='/home/raghav/Dropbox/playground/python/projects/surrogate_ec_nas/7v_data.pt')
+        default='./7v_data.pt')
 parser.add_argument('--output', type=str, default=None,help='Output filename')
 parser.add_argument('--epochs', type=int, default=100,help='No. of hidden units at input in AE')
 parser.add_argument('--hidden', type=int, default=128,help='No. of hidden units at input in AE')
@@ -126,6 +131,7 @@ if args.vary_train:
 
             ### Instantiate a model! 
             model = MLP(nIp=nIp,nhid=args.hidden) 
+            model = model.to(device)
             criterion = nn.MSELoss() ############ Loss function to be optimized. 
             optimizer = torch.optim.Adam(model.parameters(),lr=args.lr) 
             model = train(args.epochs)
@@ -133,9 +139,10 @@ if args.vary_train:
             yHat_list = np.zeros(1)
 
             for x, y in test_loader: #### Fetch validation samples
+                x, y = x.to(device), y.to(device)
                 yHat = model(x) ##########
-                yHat_list = np.concatenate((yHat_list,yHat.view(-1).detach().numpy()))
-                y_list = np.concatenate((y_list,y.view(-1).detach().numpy()))
+                yHat_list = np.concatenate((yHat_list,yHat.view(-1).detach().cpu().numpy()))
+                y_list = np.concatenate((y_list,y.view(-1).detach().cpu().numpy()))
             metric[rand,tIdx] = np.abs((y_list[1:] - yHat_list[1:])).mean()
             tIdx += 1
 
@@ -152,6 +159,11 @@ else:
 
     ### Standard model training with all training data 
     train_loader = DataLoader(train_set,batch_size=B, shuffle=True)
+    model = MLP(nIp=nIp,nhid=args.hidden) 
+    model = model.to(device)
+
+    criterion = nn.MSELoss() ############ Loss function to be optimized. 
+    optimizer = torch.optim.Adam(model.parameters(),lr=args.lr) 
 
     ### Train the neural network!
     print("Retraining from scratch...")
@@ -169,8 +181,8 @@ else:
     yHat_list = np.zeros(1)
     for x, y in train_loader: #### Fetch validation samples
         yHat = model(x) ##########
-        yHat_list = np.concatenate((yHat_list,yHat.view(-1).detach().numpy()))
-        y_list = np.concatenate((y_list,y.view(-1).detach().numpy()))
+        yHat_list = np.concatenate((yHat_list,yHat.view(-1).detach().cpu().numpy()))
+        y_list = np.concatenate((y_list,y.view(-1).detach().cpu().numpy()))
 
     #pdb.set_trace()
     plt.scatter(yHat_list[1:],y_list[1:],marker='x',s=2)
@@ -180,8 +192,8 @@ else:
 
     for x, y in test_loader: #### Fetch validation samples
         yHat = model(x) ##########
-        yHat_list = np.concatenate((yHat_list,yHat.view(-1).detach().numpy()))
-        y_list = np.concatenate((y_list,y.view(-1).detach().numpy()))
+        yHat_list = np.concatenate((yHat_list,yHat.view(-1).detach().cpu().numpy()))
+        y_list = np.concatenate((y_list,y.view(-1).detach().cpu().numpy()))
 
     plt.scatter(yHat_list[1:],y_list[1:],marker='+')
 

@@ -1,5 +1,4 @@
 import torch
-from torch_geometric.data import InMemoryDataset
 import pdb
 from sklearn.metrics.pairwise import pairwise_distances
 from torch.utils.data import TensorDataset, DataLoader, Dataset

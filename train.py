@@ -13,6 +13,7 @@ from models import MLP
 import argparse
 import pdb
 import random
+import matplotlib
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 
@@ -23,6 +24,16 @@ random.seed(seed)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(device)
+
+params = {'font.size': 12,
+          'font.sans-serif': 'Arial',
+          'font.weight': 'bold',
+          'axes.labelsize':12,
+          'axes.titlesize':12,
+          'axes.labelweight':'bold',
+          'axes.titleweight':'bold',
+          'legend.fontsize': 12}
+matplotlib.rcParams.update(params)
 
 def train(max_epoch=50):
     #### Training and validation loop!
@@ -153,7 +164,6 @@ if args.vary_train:
     plt.ylabel('Mean Absolute Error on fixed test set')
     plt.tight_layout()
     plt.savefig('surrogate_ntrain.pdf',dpi=300)
-    pdb.set_trace()
     np.save('metrics.npy',metrics)
 else:
 
@@ -194,10 +204,13 @@ else:
         yHat = model(x) ##########
         yHat_list = np.concatenate((yHat_list,yHat.view(-1).detach().cpu().numpy()))
         y_list = np.concatenate((y_list,y.view(-1).detach().cpu().numpy()))
-
-    plt.scatter(yHat_list[1:],y_list[1:],marker='+')
+    plt.clf()
+    plt.scatter(y_list[1:],yHat_list[1:],marker='o',edgecolors='none',s=30,alpha=0.35,color='#1f77b4')
 
     ymax = int(y_list.max() + 1)
-    plt.plot(np.arange(ymax),np.arange(ymax))
+    plt.plot(np.arange(ymax),np.arange(ymax),'--',linewidth=2,color='grey')
+    plt.xlabel('Actual Energy Consumption (Wh)')
+    plt.ylabel('Predicted Energy Consumption (Wh)')
+    plt.tight_layout()
+    plt.savefig('scatter.pdf',dpi=300)
 
-    plt.savefig('scatter.pdf',dpi=200)

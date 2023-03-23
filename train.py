@@ -25,14 +25,14 @@ random.seed(seed)
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(device)
 
-params = {'font.size': 12,
+params = {'font.size': 20,
           'font.sans-serif': 'Arial',
-          'font.weight': 'bold',
-          'axes.labelsize':12,
-          'axes.titlesize':12,
-          'axes.labelweight':'bold',
-          'axes.titleweight':'bold',
-          'legend.fontsize': 12}
+#          'font.weight': 'bold',
+          'axes.labelsize':20,
+          'axes.titlesize':20,
+#          'axes.labelweight':'bold',
+#          'axes.titleweight':'bold',
+          'legend.fontsize': 20}
 matplotlib.rcParams.update(params)
 
 def train(max_epoch=50):
@@ -91,7 +91,7 @@ parser.add_argument('--output', type=str, default=None,help='Output filename')
 parser.add_argument('--epochs', type=int, default=100,help='No. of hidden units at input in AE')
 parser.add_argument('--hidden', type=int, default=128,help='No. of hidden units at input in AE')
 parser.add_argument('--batch', type=int, default=32,help='Training batch size')
-parser.add_argument('--lr', type=float, default=1e-4,help='Learning rate')
+parser.add_argument('--lr', type=float, default=5e-3,help='Learning rate')
 parser.add_argument('--vary_train', action='store_true', default=False, \
         help='Train the model for different amounts of training data/ Paper plot')
 parser.add_argument('--save', action='store_true', default=True, \
@@ -120,13 +120,12 @@ nValid = int(0.1*N)
 nTest = N - nTrain -nValid
 train_set, valid_set, test_set = random_split(dataset,[nTrain, nValid, nTest])
 B = args.batch
-
 ### Wrapping the datasets with DataLoader class 
 valid_loader = DataLoader(valid_set,batch_size=B, shuffle=True)
 test_loader = DataLoader(test_set,batch_size=B, shuffle=True)
 if args.vary_train:
-    trial = 10
-    num_train = 100
+    trial = 1
+    num_train = 500
     nInter = nTrain//num_train
     metric = np.zeros((trial,nInter))
     xrange = (np.linspace(num_train,nTrain,nInter)).astype(int)
@@ -161,7 +160,7 @@ if args.vary_train:
     plt.plot(xrange,metric.mean(0))
     plt.fill_between(xrange,metric.mean(0)-metric.std(0),metric.mean(0)+metric.std(0),alpha=0.2)
     plt.xlabel('# of training datapoints')
-    plt.ylabel('Mean Absolute Error on fixed test set')
+    plt.ylabel('MAE on fixed test set')
     plt.tight_layout()
     plt.savefig('surrogate_ntrain.pdf',dpi=300)
     np.save('metrics.npy',metrics)
@@ -204,13 +203,18 @@ else:
         yHat = model(x) ##########
         yHat_list = np.concatenate((yHat_list,yHat.view(-1).detach().cpu().numpy()))
         y_list = np.concatenate((y_list,y.view(-1).detach().cpu().numpy()))
-    plt.clf()
-    plt.scatter(y_list[1:],yHat_list[1:],marker='o',edgecolors='none',s=30,alpha=0.35,color='#1f77b4')
+    from scipy.stats import pearsonr
+    pears = pearsonr(y_list, yHat_list)
 
+    plt.clf()
+    plt.plot(y_list[1],yHat_list[1],'w',label='Pearson Corr.: %.4f'%pears[0])
+    plt.legend()
+    plt.scatter(y_list[1:],yHat_list[1:],marker='o',edgecolors='none',s=30,alpha=0.35,color='#1f77b4')
     ymax = int(y_list.max() + 1)
     plt.plot(np.arange(ymax),np.arange(ymax),'--',linewidth=2,color='grey')
-    plt.xlabel('Actual Energy Consumption (Wh)')
-    plt.ylabel('Predicted Energy Consumption (Wh)')
+    plt.xlabel('Actual Energy (kWh)')
+    plt.ylabel('Predicted Energy (kWh)')
     plt.tight_layout()
-    plt.savefig('scatter.pdf',dpi=300)
+    pdb.set_trace()
+    plt.savefig('scatter.pdf',dpi=400)
 

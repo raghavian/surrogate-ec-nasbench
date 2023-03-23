@@ -14,6 +14,21 @@ def op2vec(string):
         vec[sIdx] = np.where(operations == string[sIdx])[0]
     return vec + 1
 
+class OFADataset(Dataset):
+    def __init__(self, data_file = '/home/raghav/Dropbox/playground/python/projects/surrogate_ec_nas/ofa_dataset.pt'):
+        super().__init__()
+
+        self.data, self.energy = torch.load(data_file)
+        N = len(self.energy)
+
+    def __len__(self):
+        return len(self.energy)
+
+    def __getitem__(self, index):
+
+        return self.data[index], self.energy[index]*1000
+
+
 class SurrogateDataset(Dataset):
     def __init__(self, data):
         super().__init__()
@@ -62,7 +77,7 @@ class NonGraph7V(Dataset):
         return len(self.nodes)
 
     def __getitem__(self, index):
-
+        pdb.set_trace()
         feature = torch.cat((self.adj[index],self.nodes[index],self.param[index]/1e6),dim=0).reshape(-1)
 #        feature = torch.cat((self.adj[index],self.nodes[index]),dim=0).reshape(1,-1)
 

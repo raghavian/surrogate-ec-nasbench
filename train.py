@@ -7,7 +7,7 @@ from torch.utils.data import DataLoader, random_split, Subset
 import torch.nn as nn
 import torch.nn.functional as F
 
-from dataset import NonGraph7V
+from dataset import NonGraph7V, OFADataset
 from models import MLP
 
 import argparse
@@ -87,6 +87,8 @@ def train(max_epoch=50):
 parser = argparse.ArgumentParser()
 parser.add_argument('--data', type=str, help='Spike data',\
         default='./7v_data.pt')
+parser.add_argument('--dataset', type=str, help='Use 7V or OFA',\
+        default='7V')
 parser.add_argument('--output', type=str, default=None,help='Output filename')
 parser.add_argument('--epochs', type=int, default=100,help='No. of hidden units at input in AE')
 parser.add_argument('--hidden', type=int, default=128,help='No. of hidden units at input in AE')
@@ -108,16 +110,25 @@ if args.model == None:
 num_events = []
 
 ### Make torch dataset
-dataset = NonGraph7V(data_file=args.data)
+if args.dataset == 'OFA':
+    print('Using OFA dataset')
+    dataset = OFADataset()
+else:
+    print('Using 7V dataset')
+    dataset = NonGraph7V(data_file=args.data)
 #dataset = Graph7V(data_file=args.data)
 
 
 #### Make training, validation and test sets
 N = len(dataset)
 nIp = dataset[0][0].shape[-1]
-nTrain = int(0.7*N)
+if args.dataset == 'OFA':
+    nTrain = int(0.6*N)
+else:
+    nTrain = int(0.7*N)
 nValid = int(0.1*N)
 nTest = N - nTrain -nValid
+print('Using ntrain:%d, nValid:%d, nTest: %d'%(nTrain,nValid,nTest))
 train_set, valid_set, test_set = random_split(dataset,[nTrain, nValid, nTest])
 B = args.batch
 ### Wrapping the datasets with DataLoader class 
@@ -211,10 +222,15 @@ else:
     plt.legend()
     plt.scatter(y_list[1:],yHat_list[1:],marker='o',edgecolors='none',s=30,alpha=0.35,color='#1f77b4')
     ymax = int(y_list.max() + 1)
-    plt.plot(np.arange(ymax),np.arange(ymax),'--',linewidth=2,color='grey')
-    plt.xlabel('Actual Energy (kWh)')
-    plt.ylabel('Predicted Energy (kWh)')
+#    plt.plot(np.arange(ymax),np.arange(ymax),'--',linewidth=2,color='grey')
+    if args.dataset == 'OFA':
+        plt.xlabel('Actual Energy (mWh)')
+        plt.ylabel('Predicted Energy (mWh)')
+    else:
+        plt.xlabel('Actual Energy (kWh)')
+        plt.ylabel('Predicted Energy (kWh)')
+
     plt.tight_layout()
-    pdb.set_trace()
+    #pdb.set_trace()
     plt.savefig('scatter.pdf',dpi=400)
 

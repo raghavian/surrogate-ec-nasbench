@@ -26,7 +26,7 @@ class OFADataset(Dataset):
 
     def __getitem__(self, index):
 
-        return self.data[index], self.energy[index]*1000
+        return self.data[index], self.energy[index]*1e3
 
 
 class SurrogateDataset(Dataset):
@@ -77,7 +77,6 @@ class NonGraph7V(Dataset):
         return len(self.nodes)
 
     def __getitem__(self, index):
-        pdb.set_trace()
         feature = torch.cat((self.adj[index],self.nodes[index],self.param[index]/1e6),dim=0).reshape(-1)
 #        feature = torch.cat((self.adj[index],self.nodes[index]),dim=0).reshape(1,-1)
 

@@ -3,7 +3,8 @@ import numpy as np
 import torch
 import pdb
 
-DFILE='/home/raghav/erda/projects/surrogate_ofa/results.json'
+#DFILE='/home/raghav/erda/projects/surrogate_ofa/results.json'
+DFILE='/home/raghav/erda/projects/surrogate_ofa/results_16k.json'
 
 with open(DFILE) as jfile:
     data = json.load(jfile)

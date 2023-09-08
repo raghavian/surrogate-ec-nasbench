@@ -26,7 +26,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(device)
 
 params = {'font.size': 20,
-          'font.sans-serif': 'Arial',
+#          'font.sans-serif': 'Arial',
 #          'font.weight': 'bold',
           'axes.labelsize':20,
           'axes.titlesize':20,
@@ -90,7 +90,7 @@ parser.add_argument('--data', type=str, help='Spike data',\
 parser.add_argument('--dataset', type=str, help='Use 7V or OFA',\
         default='7V')
 parser.add_argument('--output', type=str, default=None,help='Output filename')
-parser.add_argument('--epochs', type=int, default=100,help='No. of hidden units at input in AE')
+parser.add_argument('--epochs', type=int, default=5,help='No. of hidden units at input in AE')
 parser.add_argument('--hidden', type=int, default=128,help='No. of hidden units at input in AE')
 parser.add_argument('--batch', type=int, default=32,help='Training batch size')
 parser.add_argument('--lr', type=float, default=5e-3,help='Learning rate')
@@ -123,7 +123,7 @@ else:
 N = len(dataset)
 nIp = dataset[0][0].shape[-1]
 if args.dataset == 'OFA':
-    nTrain = int(0.6*N)
+    nTrain = int(0.7*N)
 else:
     nTrain = int(0.7*N)
 nValid = int(0.1*N)
@@ -153,7 +153,7 @@ if args.vary_train:
             ### Instantiate a model! 
             model = MLP(nIp=nIp,nhid=args.hidden) 
             model = model.to(device)
-            criterion = nn.MSELoss() ############ Loss function to be optimized. 
+            criterion = nn.L1Loss() ############ Loss function to be optimized. 
             optimizer = torch.optim.Adam(model.parameters(),lr=args.lr) 
             model = train(args.epochs)
             y_list = np.zeros(1)
@@ -182,7 +182,7 @@ else:
     model = MLP(nIp=nIp,nhid=args.hidden) 
     model = model.to(device)
 
-    criterion = nn.MSELoss() ############ Loss function to be optimized. 
+    criterion = nn.L1Loss() ############ Loss function to be optimized. 
     optimizer = torch.optim.Adam(model.parameters(),lr=args.lr) 
 
     ### Train the neural network!
@@ -204,7 +204,7 @@ else:
         yHat_list = np.concatenate((yHat_list,yHat.view(-1).detach().cpu().numpy()))
         y_list = np.concatenate((y_list,y.view(-1).detach().cpu().numpy()))
 
-    #pdb.set_trace()
+#    pdb.set_trace()
     plt.scatter(yHat_list[1:],y_list[1:],marker='x',s=2)
     y_list = np.zeros(1)
     yHat_list = np.zeros(1)
@@ -214,22 +214,23 @@ else:
         yHat = model(x) ##########
         yHat_list = np.concatenate((yHat_list,yHat.view(-1).detach().cpu().numpy()))
         y_list = np.concatenate((y_list,y.view(-1).detach().cpu().numpy()))
-    from scipy.stats import pearsonr
+    from scipy.stats import pearsonr,kendalltau
     pears = pearsonr(y_list, yHat_list)
+    ktau = kendalltau(y_list, yHat_list)
 
     plt.clf()
-    plt.plot(y_list[1],yHat_list[1],'w',label='Pearson Corr.: %.4f'%pears[0])
-    plt.legend()
+    plt.plot(y_list[1],yHat_list[1],'w',label='Kendall-Tau $R^2$ =  %.4f'%(ktau[0]**2))
+    plt.legend(frameon=False,loc='upper left')
     plt.scatter(y_list[1:],yHat_list[1:],marker='o',edgecolors='none',s=30,alpha=0.35,color='#1f77b4')
     ymax = int(y_list.max() + 1)
 #    plt.plot(np.arange(ymax),np.arange(ymax),'--',linewidth=2,color='grey')
     if args.dataset == 'OFA':
-        plt.xlabel('Actual Energy (mWh)')
-        plt.ylabel('Predicted Energy (mWh)')
+        plt.xlabel('Actual Energy (Wh)')
+        plt.ylabel('Predicted Energy (Wh)')
     else:
         plt.xlabel('Actual Energy (kWh)')
         plt.ylabel('Predicted Energy (kWh)')
-
+    plt.ylim([y_list.min()*0.9,1.1*ymax])
     plt.tight_layout()
     #pdb.set_trace()
     plt.savefig('scatter.pdf',dpi=400)

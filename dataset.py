@@ -19,6 +19,9 @@ class OFADataset(Dataset):
         super().__init__()
 
         self.data, self.energy = torch.load(data_file)
+#        pdb.set_trace()
+#        self.data = self.data[self.energy < 5e-4] 
+#        self.energy = self.energy[self.energy < 5e-4]
         N = len(self.energy)
 
     def __len__(self):

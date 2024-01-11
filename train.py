@@ -25,14 +25,20 @@ random.seed(seed)
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(device)
 
-params = {'font.size': 20,
-#          'font.sans-serif': 'Arial',
-#          'font.weight': 'bold',
-          'axes.labelsize':20,
-          'axes.titlesize':20,
-#          'axes.labelweight':'bold',
-#          'axes.titleweight':'bold',
-          'legend.fontsize': 20}
+params = {'font.size': 16,          
+        #'font.sans-serif': 'Arial',          
+        'font.weight': 'bold',          
+        'legend.frameon': True,          
+        'axes.labelsize':20,          
+        'axes.titlesize':16,          
+        'axes.labelweight':'bold',          
+        'axes.titleweight':'bold',          
+        'legend.fontsize': 18,          
+        'text.usetex': True,          
+        'text.latex.preamble': r'\boldmath',         
+        'xtick.labelsize': 16,          
+        'ytick.labelsize': 16,         }
+
 matplotlib.rcParams.update(params)
 
 def train(max_epoch=50):
@@ -135,8 +141,8 @@ B = args.batch
 valid_loader = DataLoader(valid_set,batch_size=B, shuffle=True)
 test_loader = DataLoader(test_set,batch_size=B, shuffle=True)
 if args.vary_train:
-    trial = 1
-    num_train = 500
+    trial = 10
+    num_train = 100
     nInter = nTrain//num_train
     metric = np.zeros((trial,nInter))
     xrange = (np.linspace(num_train,nTrain,nInter)).astype(int)
@@ -168,13 +174,13 @@ if args.vary_train:
             tIdx += 1
 
     plt.clf()
-    plt.plot(xrange,metric.mean(0))
+    plt.plot(xrange,metric.mean(0),linewidth=3)
     plt.fill_between(xrange,metric.mean(0)-metric.std(0),metric.mean(0)+metric.std(0),alpha=0.2)
-    plt.xlabel('# of training datapoints')
-    plt.ylabel('MAE on fixed test set')
+    plt.xlabel(r'\textbf{No. of training datapoints}')
+    plt.ylabel(r'\textbf{MAE on fixed test set}')
     plt.tight_layout()
     plt.savefig('surrogate_ntrain.pdf',dpi=300)
-    np.save('metrics.npy',metrics)
+#    np.save('metrics.npy',metrics)
 else:
 
     ### Standard model training with all training data 
@@ -219,19 +225,19 @@ else:
     ktau = kendalltau(y_list, yHat_list)
 
     plt.clf()
-    plt.plot(y_list[1],yHat_list[1],'w',label='Kendall-Tau $R^2$ =  %.4f'%(ktau[0]**2))
+    plt.plot(y_list[1],yHat_list[1],'w',label=r'\textbf{Kendall-Tau $R^2$ =  %.4f}'%(ktau[0]**2))
     plt.legend(frameon=False,loc='upper left')
     plt.scatter(y_list[1:],yHat_list[1:],marker='o',edgecolors='none',s=30,alpha=0.35,color='#1f77b4')
     ymax = int(y_list.max() + 1)
 #    plt.plot(np.arange(ymax),np.arange(ymax),'--',linewidth=2,color='grey')
     if args.dataset == 'OFA':
-        plt.xlabel('Actual Energy (Wh)')
-        plt.ylabel('Predicted Energy (Wh)')
+        plt.xlabel(r'\textbf{Actual Energy (Wh)}')
+        plt.ylabel(r'\textbf{Predicted Energy (Wh)}')
     else:
-        plt.xlabel('Actual Energy (kWh)')
-        plt.ylabel('Predicted Energy (kWh)')
+        plt.xlabel(r'\textbf{Actual Energy (kWh)}')
+        plt.ylabel(r'\textbf{Predicted Energy (kWh})')
     plt.ylim([y_list.min()*0.9,1.1*ymax])
     plt.tight_layout()
     #pdb.set_trace()
-    plt.savefig('scatter.pdf',dpi=400)
+    plt.savefig('scatter.pdf',dpi=300)
 
